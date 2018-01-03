@@ -1,0 +1,1 @@
+elm-live --port=3000 --output=../ede/static/ede/elm.js index.elm --pushstate --no-recover

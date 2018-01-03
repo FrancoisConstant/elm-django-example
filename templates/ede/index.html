@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,5 +7,8 @@
 </head>
 <body>
   <h1>Elm Django Example</h1>
+  <div id="elm"></div>
+  <script src="{% static 'ede/elm.js' %}"></script>
+  <script type="text/javascript">Elm.Ede.embed(document.querySelector("#elm"));</script>
 </body>
 </html>

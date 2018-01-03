@@ -1,3 +1,5 @@
+module Ede exposing (..)
+
 import Html exposing (beginnerProgram, div, button, text)
 import Html.Events exposing (onClick)
 
