@@ -1,0 +1,14 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Elm Django Example</title>
+</head>
+<body>
+  <h1>Elm Django Example - Search</h1>
+  <div id="elm-search"></div>
+  <script src="{% static 'ede/elm.js' %}"></script>
+  <script type="text/javascript">Elm.Ede.embed(document.querySelector("#elm-search"));</script>
+</body>
+</html>
