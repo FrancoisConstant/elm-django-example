@@ -8,7 +8,7 @@ def get_tweets_search_data():
                 'author_url': tweet.author.url,
                 'author_name': tweet.author.name,
                 'content': tweet.content,
-                'searchString': "{username} {name} {content}".format(
+                'search_string': "{username} {name} {content}".format(
                     username=tweet.author.username,
                     name=tweet.author.name,
                     content=tweet.content
