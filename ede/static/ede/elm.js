@@ -6142,6 +6142,126 @@ var _elm_lang$core$Json_Decode$bool = _elm_lang$core$Native_Json.decodePrimitive
 var _elm_lang$core$Json_Decode$string = _elm_lang$core$Native_Json.decodePrimitive('string');
 var _elm_lang$core$Json_Decode$Decoder = {ctor: 'Decoder'};
 
+//import Maybe, Native.List //
+
+var _elm_lang$core$Native_Regex = function() {
+
+function escape(str)
+{
+	return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+function caseInsensitive(re)
+{
+	return new RegExp(re.source, 'gi');
+}
+function regex(raw)
+{
+	return new RegExp(raw, 'g');
+}
+
+function contains(re, string)
+{
+	return string.match(re) !== null;
+}
+
+function find(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var out = [];
+	var number = 0;
+	var string = str;
+	var lastIndex = re.lastIndex;
+	var prevLastIndex = -1;
+	var result;
+	while (number++ < n && (result = re.exec(string)))
+	{
+		if (prevLastIndex === re.lastIndex) break;
+		var i = result.length - 1;
+		var subs = new Array(i);
+		while (i > 0)
+		{
+			var submatch = result[i];
+			subs[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		out.push({
+			match: result[0],
+			submatches: _elm_lang$core$Native_List.fromArray(subs),
+			index: result.index,
+			number: number
+		});
+		prevLastIndex = re.lastIndex;
+	}
+	re.lastIndex = lastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+function replace(n, re, replacer, string)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	var count = 0;
+	function jsReplacer(match)
+	{
+		if (count++ >= n)
+		{
+			return match;
+		}
+		var i = arguments.length - 3;
+		var submatches = new Array(i);
+		while (i > 0)
+		{
+			var submatch = arguments[i];
+			submatches[--i] = submatch === undefined
+				? _elm_lang$core$Maybe$Nothing
+				: _elm_lang$core$Maybe$Just(submatch);
+		}
+		return replacer({
+			match: match,
+			submatches: _elm_lang$core$Native_List.fromArray(submatches),
+			index: arguments[arguments.length - 2],
+			number: count
+		});
+	}
+	return string.replace(re, jsReplacer);
+}
+
+function split(n, re, str)
+{
+	n = n.ctor === 'All' ? Infinity : n._0;
+	if (n === Infinity)
+	{
+		return _elm_lang$core$Native_List.fromArray(str.split(re));
+	}
+	var string = str;
+	var result;
+	var out = [];
+	var start = re.lastIndex;
+	var restoreLastIndex = re.lastIndex;
+	while (n--)
+	{
+		if (!(result = re.exec(string))) break;
+		out.push(string.slice(start, result.index));
+		start = re.lastIndex;
+	}
+	out.push(string.slice(start));
+	re.lastIndex = restoreLastIndex;
+	return _elm_lang$core$Native_List.fromArray(out);
+}
+
+return {
+	regex: regex,
+	caseInsensitive: caseInsensitive,
+	escape: escape,
+
+	contains: F2(contains),
+	find: F3(find),
+	replace: F4(replace),
+	split: F3(split)
+};
+
+}();
+
 var _elm_lang$core$Tuple$mapSecond = F2(
 	function (func, _p0) {
 		var _p1 = _p0;
@@ -6168,6 +6288,23 @@ var _elm_lang$core$Tuple$first = function (_p6) {
 	var _p7 = _p6;
 	return _p7._0;
 };
+
+var _elm_lang$core$Regex$split = _elm_lang$core$Native_Regex.split;
+var _elm_lang$core$Regex$replace = _elm_lang$core$Native_Regex.replace;
+var _elm_lang$core$Regex$find = _elm_lang$core$Native_Regex.find;
+var _elm_lang$core$Regex$contains = _elm_lang$core$Native_Regex.contains;
+var _elm_lang$core$Regex$caseInsensitive = _elm_lang$core$Native_Regex.caseInsensitive;
+var _elm_lang$core$Regex$regex = _elm_lang$core$Native_Regex.regex;
+var _elm_lang$core$Regex$escape = _elm_lang$core$Native_Regex.escape;
+var _elm_lang$core$Regex$Match = F4(
+	function (a, b, c, d) {
+		return {match: a, submatches: b, index: c, number: d};
+	});
+var _elm_lang$core$Regex$Regex = {ctor: 'Regex'};
+var _elm_lang$core$Regex$AtMost = function (a) {
+	return {ctor: 'AtMost', _0: a};
+};
+var _elm_lang$core$Regex$All = {ctor: 'All'};
 
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrap;
 var _elm_lang$virtual_dom$VirtualDom_Debug$wrapWithFlags;
@@ -12992,50 +13129,111 @@ var _elm_lang$http$Http$StringPart = F2(
 	});
 var _elm_lang$http$Http$stringPart = _elm_lang$http$Http$StringPart;
 
+var _user$project$Search$filterTweets = F2(
+	function (allTweets, search) {
+		return _elm_lang$core$Native_Utils.eq(search, '') ? _elm_lang$core$Array$empty : A3(
+			_elm_lang$core$Array$slice,
+			0,
+			22,
+			A2(
+				_elm_lang$core$Array$filter,
+				function (tweet) {
+					return A2(
+						_elm_lang$core$String$contains,
+						_elm_lang$core$String$toLower(search),
+						tweet.searchString);
+				},
+				allTweets));
+	});
+var _user$project$Search$searchTweets = F2(
+	function (model, search) {
+		var newModel = _elm_lang$core$Native_Utils.update(
+			model,
+			{
+				search: search,
+				resultTweets: A2(_user$project$Search$filterTweets, model.allTweets, search)
+			});
+		return {ctor: '_Tuple2', _0: newModel, _1: _elm_lang$core$Platform_Cmd$none};
+	});
 var _user$project$Search$renderTweet = function (tweet) {
-	return A2(
-		_elm_lang$html$Html$li,
-		{ctor: '[]'},
-		{
-			ctor: '::',
-			_0: A2(
-				_elm_lang$html$Html$strong,
-				{ctor: '[]'},
-				{
-					ctor: '::',
-					_0: _elm_lang$html$Html$text(tweet.authorName),
-					_1: {ctor: '[]'}
-				}),
-			_1: {
-				ctor: '::',
-				_0: _elm_lang$html$Html$text(' - '),
-				_1: {
-					ctor: '::',
-					_0: A2(
-						_elm_lang$html$Html$span,
-						{ctor: '[]'},
-						{
-							ctor: '::',
-							_0: _elm_lang$html$Html$text(tweet.content),
-							_1: {ctor: '[]'}
-						}),
-					_1: {ctor: '[]'}
-				}
-			}
-		});
-};
-var _user$project$Search$renderTweets = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		{ctor: '[]'},
 		{
 			ctor: '::',
 			_0: A2(
-				_elm_lang$html$Html$h3,
+				_elm_lang$html$Html$h2,
 				{ctor: '[]'},
 				{
 					ctor: '::',
-					_0: _elm_lang$html$Html$text('All the tweets'),
+					_0: _elm_lang$html$Html$text(tweet.content),
+					_1: {ctor: '[]'}
+				}),
+			_1: {
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$h3,
+					{ctor: '[]'},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text(tweet.authorName),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			}
+		});
+};
+var _user$project$Search$renderTweets = function (model) {
+	return _elm_lang$core$Native_Utils.eq(model.search, '') ? A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('message'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$p,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text('No tweet found'),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		}) : ((_elm_lang$core$Native_Utils.cmp(
+		_elm_lang$core$Array$length(model.resultTweets),
+		0) > 0) ? A2(
+		_elm_lang$html$Html$div,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$div,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$class('message'),
+					_1: {ctor: '[]'}
+				},
+				{
+					ctor: '::',
+					_0: A2(
+						_elm_lang$html$Html$p,
+						{ctor: '[]'},
+						{
+							ctor: '::',
+							_0: _elm_lang$html$Html$text(
+								A2(
+									_elm_lang$core$Basics_ops['++'],
+									_elm_lang$core$Basics$toString(
+										_elm_lang$core$Array$length(model.resultTweets)),
+									A2(
+										_elm_lang$core$Basics_ops['++'],
+										' results for \"',
+										A2(_elm_lang$core$Basics_ops['++'], model.search, '\"')))),
+							_1: {ctor: '[]'}
+						}),
 					_1: {ctor: '[]'}
 				}),
 			_1: {
@@ -13044,20 +13242,32 @@ var _user$project$Search$renderTweets = function (model) {
 					_elm_lang$html$Html$div,
 					{ctor: '[]'},
 					_elm_lang$core$Array$toList(
-						A2(_elm_lang$core$Array$map, _user$project$Search$renderTweet, model.allTweets))),
+						A2(_elm_lang$core$Array$map, _user$project$Search$renderTweet, model.resultTweets))),
 				_1: {ctor: '[]'}
 			}
-		});
-};
-var _user$project$Search$view = function (model) {
-	return A2(
+		}) : A2(
 		_elm_lang$html$Html$div,
-		{ctor: '[]'},
 		{
 			ctor: '::',
-			_0: _user$project$Search$renderTweets(model),
+			_0: _elm_lang$html$Html_Attributes$class('message'),
 			_1: {ctor: '[]'}
-		});
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$p,
+				{ctor: '[]'},
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html$text(
+						A2(
+							_elm_lang$core$Basics_ops['++'],
+							'No results for \"',
+							A2(_elm_lang$core$Basics_ops['++'], model.search, '\"'))),
+					_1: {ctor: '[]'}
+				}),
+			_1: {ctor: '[]'}
+		}));
 };
 var _user$project$Search$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$none;
@@ -13109,26 +13319,31 @@ var _user$project$Search$tweetsDecoder = A2(
 		_1: {ctor: '[]'}
 	},
 	_elm_lang$core$Json_Decode$array(_user$project$Search$tweetDecoder));
-var _user$project$Search$Model = function (a) {
-	return {allTweets: a};
-};
-var _user$project$Search$getInitialModel = _user$project$Search$Model(_elm_lang$core$Array$empty);
+var _user$project$Search$Model = F3(
+	function (a, b, c) {
+		return {search: a, allTweets: b, resultTweets: c};
+	});
+var _user$project$Search$getInitialModel = A3(_user$project$Search$Model, '', _elm_lang$core$Array$empty, _elm_lang$core$Array$empty);
 var _user$project$Search$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
-		if (_p0._0.ctor === 'Ok') {
-			return {
-				ctor: '_Tuple2',
-				_0: _elm_lang$core$Native_Utils.update(
-					_user$project$Search$getInitialModel,
-					{allTweets: _p0._0._0}),
-				_1: _elm_lang$core$Platform_Cmd$none
-			};
+		if (_p0.ctor === 'MsgSearch') {
+			return A2(_user$project$Search$searchTweets, model, _p0._0);
 		} else {
-			return A2(
-				_elm_lang$core$Debug$log,
-				_elm_lang$core$Basics$toString(_p0._0._0),
-				{ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none});
+			if (_p0._0.ctor === 'Ok') {
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						_user$project$Search$getInitialModel,
+						{allTweets: _p0._0._0}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			} else {
+				return A2(
+					_elm_lang$core$Debug$log,
+					_elm_lang$core$Basics$toString(_p0._0._0),
+					{ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none});
+			}
 		}
 	});
 var _user$project$Search$GotTweets = function (a) {
@@ -13142,13 +13357,59 @@ var _user$project$Search$getTweets = function () {
 		A2(_elm_lang$http$Http$get, url, _user$project$Search$tweetsDecoder));
 }();
 var _user$project$Search$init = {ctor: '_Tuple2', _0: _user$project$Search$getInitialModel, _1: _user$project$Search$getTweets};
+var _user$project$Search$MsgSearch = function (a) {
+	return {ctor: 'MsgSearch', _0: a};
+};
+var _user$project$Search$renderSearchBar = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{
+			ctor: '::',
+			_0: _elm_lang$html$Html_Attributes$class('search'),
+			_1: {ctor: '[]'}
+		},
+		{
+			ctor: '::',
+			_0: A2(
+				_elm_lang$html$Html$input,
+				{
+					ctor: '::',
+					_0: _elm_lang$html$Html_Attributes$placeholder('search some tweets'),
+					_1: {
+						ctor: '::',
+						_0: _elm_lang$html$Html_Attributes$autofocus(true),
+						_1: {
+							ctor: '::',
+							_0: _elm_lang$html$Html_Events$onInput(_user$project$Search$MsgSearch),
+							_1: {ctor: '[]'}
+						}
+					}
+				},
+				{ctor: '[]'}),
+			_1: {ctor: '[]'}
+		});
+};
+var _user$project$Search$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		{ctor: '[]'},
+		{
+			ctor: '::',
+			_0: _user$project$Search$renderSearchBar(model),
+			_1: {
+				ctor: '::',
+				_0: _user$project$Search$renderTweets(model),
+				_1: {ctor: '[]'}
+			}
+		});
+};
 var _user$project$Search$main = _elm_lang$html$Html$program(
 	{init: _user$project$Search$init, view: _user$project$Search$view, update: _user$project$Search$update, subscriptions: _user$project$Search$subscriptions})();
 
 var Elm = {};
 Elm['Search'] = Elm['Search'] || {};
 if (typeof _user$project$Search$main !== 'undefined') {
-    _user$project$Search$main(Elm['Search'], 'Search', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Array.Array":{"args":["a"],"tags":{"Array":[]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Search.Msg":{"args":[],"tags":{"GotTweets":["Result.Result Http.Error (Array.Array Search.Tweet)"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Search.Tweet":{"args":[],"type":"{ content : String , searchString : String , authorUrl : String , authorName : String }"}},"message":"Search.Msg"},"versions":{"elm":"0.18.0"}});
+    _user$project$Search$main(Elm['Search'], 'Search', {"types":{"unions":{"Dict.LeafColor":{"args":[],"tags":{"LBBlack":[],"LBlack":[]}},"Dict.Dict":{"args":["k","v"],"tags":{"RBNode_elm_builtin":["Dict.NColor","k","v","Dict.Dict k v","Dict.Dict k v"],"RBEmpty_elm_builtin":["Dict.LeafColor"]}},"Array.Array":{"args":["a"],"tags":{"Array":[]}},"Dict.NColor":{"args":[],"tags":{"BBlack":[],"Red":[],"NBlack":[],"Black":[]}},"Http.Error":{"args":[],"tags":{"BadUrl":["String"],"NetworkError":[],"Timeout":[],"BadStatus":["Http.Response String"],"BadPayload":["String","Http.Response String"]}},"Result.Result":{"args":["error","value"],"tags":{"Ok":["value"],"Err":["error"]}},"Search.Msg":{"args":[],"tags":{"MsgSearch":["String"],"GotTweets":["Result.Result Http.Error (Array.Array Search.Tweet)"]}}},"aliases":{"Http.Response":{"args":["body"],"type":"{ url : String , status : { code : Int, message : String } , headers : Dict.Dict String String , body : body }"},"Search.Tweet":{"args":[],"type":"{ content : String , searchString : String , authorUrl : String , authorName : String }"}},"message":"Search.Msg"},"versions":{"elm":"0.18.0"}});
 }
 
 if (typeof define === "function" && define['amd'])

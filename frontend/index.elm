@@ -1,12 +1,13 @@
 module Search exposing (..)
 
 import Array
-import Html exposing (Html, button, div, em, h1, h2, h3, input, li, p, span, strong, text, ul)
-import Html.Attributes exposing (class, href)
+import Html exposing (Html, beginnerProgram, br, button, div, em, h1, h2, h3, input, p, span, text)
+import Html.Attributes exposing (autofocus, class, href, maxlength, placeholder)
 import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode
 import List
+import Regex
 
 
 type alias Tweet =
@@ -18,12 +19,15 @@ type alias Tweet =
 
 
 type alias Model =
-    { allTweets : Array.Array Tweet
+    { search : String
+    , allTweets : Array.Array Tweet
+    , resultTweets : Array.Array Tweet
     }
 
 
 type Msg
-    = GotTweets (Result Http.Error (Array.Array Tweet))
+    = MsgSearch String
+    | GotTweets (Result Http.Error (Array.Array Tweet))
 
 
 subscriptions : Model -> Sub Msg
@@ -33,7 +37,7 @@ subscriptions model =
 
 getInitialModel : Model
 getInitialModel =
-    Model Array.empty
+    Model "" Array.empty Array.empty
 
 
 main =
@@ -50,34 +54,65 @@ init =
     ( getInitialModel, getTweets )
 
 
+
+--view : Model -> Html Msg
+
+
 view model =
     div []
-        [ renderTweets model ]
+        [ renderSearchBar model
+        , renderTweets model
+        ]
+
+
+renderSearchBar : Model -> Html Msg
+renderSearchBar model =
+    div [ class "search" ]
+        [ input
+            [ placeholder "search some tweets"
+            , autofocus True
+            , onInput MsgSearch
+            ]
+            []
+        ]
 
 
 renderTweets : Model -> Html Msg
 renderTweets model =
-    div []
-        [ h3 [] [ text "All the tweets" ]
-        , model.allTweets
-            |> Array.map renderTweet
-            |> Array.toList
-            |> div []
-        ]
+    if model.search == "" then
+        div [ class "message" ] [ p [] [ text "No tweet found" ] ]
+    else if Array.length model.resultTweets > 0 then
+        div []
+            [ div [ class "message" ]
+                [ p []
+                    [ text (toString (Array.length model.resultTweets) ++ " results for \"" ++ model.search ++ "\"")
+                    ]
+                ]
+            , model.resultTweets
+                |> Array.map renderTweet
+                |> Array.toList
+                |> div []
+            ]
+    else
+        div [ class "message" ]
+            [ p [] [ text ("No results for \"" ++ model.search ++ "\"") ]
+            ]
 
 
 renderTweet : Tweet -> Html Msg
 renderTweet tweet =
-    li []
-        [ strong [] [ text tweet.authorName ]
-        , text " - "
-        , span [] [ text tweet.content ]
+    div []
+        [ h2 [] [ text tweet.content ]
+        , h3 [] [ text tweet.authorName ]
         ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        MsgSearch newSearch ->
+            searchTweets model newSearch
+
         GotTweets (Ok newTweets) ->
             ( { getInitialModel | allTweets = newTweets }
             , Cmd.none
@@ -85,7 +120,26 @@ update msg model =
 
         GotTweets (Err e) ->
             Debug.log (toString e)
-                ( model, Cmd.none )
+            ( model, Cmd.none )
+
+
+searchTweets : Model -> String -> ( Model, Cmd Msg )
+searchTweets model search =
+    let
+        newModel =
+            { model | search = search, resultTweets = filterTweets model.allTweets search }
+    in
+    ( newModel, Cmd.none )
+
+
+filterTweets : Array.Array Tweet -> String -> Array.Array Tweet
+filterTweets allTweets search =
+    if search == "" then
+        Array.empty
+    else
+        allTweets
+            |> Array.filter (\tweet -> String.contains (String.toLower search) tweet.searchString)
+            |> Array.slice 0 22
 
 
 getTweets : Cmd Msg
